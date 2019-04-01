@@ -1,8 +1,3 @@
-// event handler for button
-// get input values
-// add new item on data structure
-// add new item in the ui
-// caluclate budget and update ui
 const ui = ( function() {    
 
     let domStrings = {  //  all elements reference 
@@ -17,7 +12,7 @@ const ui = ( function() {
             totalBudget: document.querySelector("#available-budget")
     }
 
-    let domInputs = {  // storing all 3 inputs values in an object for easy referencing
+    let domInputs = {  // storing all 3 inputs values in an object for easy referencing + an id for each specific item
         type: document.querySelector(".add_type").value,
         description: document.querySelector("input[type=text]").value,
         value: document.querySelector("input[type=number]").value,
@@ -32,16 +27,14 @@ const ui = ( function() {
         });
     }
 
-    let addUiItem = function(type, description , value , id){    // creating a list item  ; will receive the inputs values
+    let addUiItem = function(type, description , value , id){    // creating a list item  ; will receive the inputs values and an id
         let newElement = `<div class="${type}-list" id="${id}"><div class="input-description">${description}</div><div class="input-value">${value}</div><div class="delete-button-container"><button class="delete-item"><i class="ion-ios-close-outline delete-item"></i></button></div></div>`;        
         return newElement
 }
 
-    let getDelete = function(strings){
-        strings.deleteButton = document.querySelector(".delete-button")
-    }
 
-    return {  // will update the month directly 
+
+    return {  // will update the month&year directly 
         crtMonth: document.querySelector("#month").innerHTML = new Intl.DateTimeFormat('en-GB', {month: 'long'}).format(new Date()) ,
         crtYear: document.querySelector("#year").innerHTML = new Intl.DateTimeFormat('en-GB', {year: 'numeric'}).format(new Date()) ,
         domInputs: domInputs,
@@ -54,7 +47,7 @@ const ui = ( function() {
 // budget
 const budgetController = ( function(){
 
-    var Income = function(id , description , value ) {   // functions constructors creating an object for one item list 
+    var Income = function(id , description , value ) {   // functions constructors creating an object for one item in list 
         this.id = id;
         this.description = description;
         this.value = value;
@@ -66,7 +59,7 @@ const budgetController = ( function(){
         this.value = value;
     }
 
-    let data = {
+    let data = {   // an object holding the items in each list
         list: {
             income:[],
             expense:[]
@@ -88,8 +81,8 @@ const budgetController = ( function(){
 
     return {
         data: data,
-        addToList: function(type , description , value ,id ){ 
-            if(type === "income" ){
+        addToList: function(type , description , value ,id ){ // adding a new item in the list object using the coonstructors
+            if(type === "income" ){    // based on type
                 newItem = new Income(id,description,parseInt(value))
                 data.list[type].push(newItem);
             }
@@ -99,39 +92,29 @@ const budgetController = ( function(){
             }
             return data
         },
-        removeFromList: function(type , elId){
+        removeFromList: function(type , elId){   // removing item from list 
                 //let getAllIds = data.list.income.map(elem => elem.id).concat( data.list.expense.map( elem => elem.id) )
-                let regexIncome = /income/i;
-                let regexExpense = /expense/i;
-                if( regexIncome.test( type  ) ) {
-                  //   data.list.income.filter( x => x.id !== elId    )
-                  //  console.log( data.list.income.filter( x => x.id !== elId    )  )
-                    data.list.income = data.list.income.filter( x => x.id !== elId )
-                }
-                else if( regexExpense.test( type  )) {
-                    //   data.list.income.filter( x => x.id !== elId    )
-                    //  console.log( data.list.expense.filter( x => x.id !== elId    )  )
-                    data.list.expense = data.list.expense.filter( x => x.id !== elId )
-                  }
-        }
-
-    }
+            let regexIncome = /income/i;
+            let regexExpense = /expense/i;
+            if( regexIncome.test( type  ) )  data.list.income = data.list.income.filter( x => x.id !== elId )  // the type will be checked using the element's class   
+             else if( regexExpense.test( type  ))   data.list.expense = data.list.expense.filter( x => x.id !== elId )
+           }
+       }
 })()
 
-// controller
-const appControler = ( function(ui , budgetController) {
+//  the application controller 
+const appControler = ( function(ui , budgetController) {  // uses information from both ui and budget to update the data and the ui
 
-    let setupEvListners = function(strings , inputs){   // setting up all events ; receive the ui objects holding all inputs and all strings
-    //retaining inputs values
-    strings.inputType.addEventListener("change" ,        (ev) => inputs.type = ev.target.value)
-    strings.inputDescription.addEventListener("change" , (ev) => inputs.description = ev.target.value )
-    strings.inputValue.addEventListener("change" ,       (ev) => inputs.value = ev.target.value)
-
+    let setupEvListners = function(strings , inputs){ // setting up all events ; receive the ui objects holding all inputs and all strings
+    
+    strings.inputType.addEventListener("change" ,        (ev) => inputs.type = ev.target.value)      //retaining inputs values
+    strings.inputDescription.addEventListener("change" , (ev) => inputs.description = ev.target.value )  //retaining inputs values
+    strings.inputValue.addEventListener("change" ,       (ev) => inputs.value = ev.target.value)  //retaining inputs values
     strings.submitButton.addEventListener( "click" , (ev) => {  //  submit to update lists in ui
         ev.preventDefault();  
-        if( inputs.description !== "" && inputs.value !== ""  && inputs.value > 0 ) {  // not letting the inputs to be empty or 0 for the value input                 
-            //adding new element to list based on the type of input
-            if( inputs.type === "income" ) { 
+        if( inputs.description !== "" && inputs.value !== ""  && inputs.value > 0 ) {  // some input restrictions
+            
+            if( inputs.type === "income" ) { //adding new element to list based on the type of input
                     strings.incomeList.innerHTML += ui.addUiItem( inputs.type, inputs.description , inputs.value , inputs.id) ;  // add item in list in dom    
                     ui.clearFields();  // clear inputs 
                     budgetController.addToList( inputs.type , inputs.description, inputs.value, inputs.id );  // updating list with new object in the budget controller
@@ -143,17 +126,21 @@ const appControler = ( function(ui , budgetController) {
                     budgetController.addToList(inputs.type, inputs.description , inputs.value , inputs.id);
                      inputs.id++;
             }
-        }  else{   // alert("Please enter a valid")
+        }  else if( inputs.description == "")    { 
+                    alert("Please add an income description!")
                 }
+        else {
+            alert("Please add a numeric value!")
+        }
 
-            budgetController.data.totals(strings.totalInc , strings.totalExp , strings.totalBudget  )   //update DOM budget section
+            budgetController.data.totals(strings.totalInc , strings.totalExp , strings.totalBudget  )   //update budget section
     })
 
     strings.incomeList.addEventListener("click", function(ev){   // removing item list
             if(ev.target  && ev.target.matches(".delete-item") ) {    
              budgetController.removeFromList( ev.target.offsetParent.classList.value , parseInt(ev.target.offsetParent.id) )
-            ev.target.offsetParent.remove();
-        budgetController.data.totals(strings.totalInc , strings.totalExp , strings.totalBudget  )
+             ev.target.offsetParent.remove(); // removing dom element
+            budgetController.data.totals(strings.totalInc , strings.totalExp , strings.totalBudget  ) //recalculating the budget after removing items
             }
     } )
 
@@ -175,3 +162,4 @@ return {
 
 
 appControler.innit();
+
